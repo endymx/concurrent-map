@@ -281,7 +281,7 @@ func (m ConcurrentMap[K, V]) Items() map[K]V {
 // maps. RLock is held for all calls for a given shard
 // therefore callback sess consistent view of a shard,
 // but not across the shards
-type IterCb[K comparable, V any] func(key K, v V)
+type IterCb[K comparable, V any] func(key K, v V) bool
 
 // Callback based iterator, cheapest way to read
 // all elements in a map.
@@ -290,7 +290,9 @@ func (m ConcurrentMap[K, V]) IterCb(fn IterCb[K, V]) {
 		shard := (m.shards)[idx]
 		shard.RLock()
 		for key, value := range shard.items {
-			fn(key, value)
+			if !fn(key, value) {
+				break
+			}
 		}
 		shard.RUnlock()
 	}
